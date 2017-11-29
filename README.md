@@ -23,3 +23,23 @@ https://github.com/garystafford/object-tracking-blogpost
 
 - matlab
 https://github.com/yuxng/MDP_Tracking
+
+### track && follow
+#### with detail
+https://github.com/veda-s4dhak/FollowCam
+
+### easy
+https://github.com/elec-club-iitb/follow-me-around
+
+#### quadrotor
+- Python
+https://github.com/apunkd/Follow_Code
+
+#### On-Drone
+https://github.com/kabzo/object_track_and_follow
+
+#### ROS
+- Python
+https://github.com/mzraghib/ObjectFollower
+- C++
+https://github.com/helmifraser/turtlebot-object-follow
