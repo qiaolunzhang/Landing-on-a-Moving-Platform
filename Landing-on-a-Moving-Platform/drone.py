@@ -4,8 +4,24 @@
 # import the necessary packages
 import cv2
 
+standard_path = "./data/mark.jpg"
+video_path = "../video/test.mp4"
+
+sift = cv2.xfeatures2d.SIFT_create()
+
+## Create flann matcher
+FLANN_INDEX_KDTREE = 1  # bug: flann enums are missing
+flann_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+#matcher = cv2.FlannBasedMatcher_create()
+matcher = cv2.FlannBasedMatcher(flann_params, {})
+
+## Detect and compute
+img1 = cv2.imread(standard_path)
+gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+kpts1, descs1 = sift.detectAndCompute(gray1,None)
+
 # load the video
-camera = cv2.VideoCapture('../video/test.mp4')
+camera = cv2.VideoCapture(video_path)
 
 # keep looping
 while True:
@@ -18,35 +34,24 @@ while True:
     if not grabbed:
         break
 
-    # convert the frame to grayscale, blur it, and detect edges
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (7, 7), 0)
-    edged = cv2.Canny(blurred, 50, 150)
-
-    # find contours in the edge map
-    # hierarchy: an array of four values : [Next, Previous, First_Child, Parent]
-    _, cnts, hierarchy_original = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL,
-        cv2.CHAIN_APPROX_SIMPLE)
+    ## as up
+    gray2 = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    kpts2, descs2 = sift.detectAndCompute(gray2, None)
 
     try:
-        hierarchy = hierarchy_original[0]
-        index_contours = 0
-        h_list = []
-        print(hierarchy)
-        for component in zip(cnts, hierarchy):
-            currentContour = component[0]
-            currentHierarchy = component[1]
-            c = cnts[index_contours]
-            peri = cv2.arcLength(c, True)
-            approx = cv2.approxPolyDP(c, 0.02 * peri, True)
-            area = cv2.contourArea(c)
-
-            if ((len(approx) > 8) & (len(approx) < 23) & (area > 30)):
-                cv2.drawContours(frame, [approx], -1, (0, 0, 255), 4)
-
-            index_contours = index_contours + 1
-
-        # draw the status text on the frame
+        matches = matcher.knnMatch(descs1, descs2, 2)
+        matchesMask = [[0, 0] for i in range(len(matches))]
+        for i, (m1, m2) in enumerate(matches):
+            if m1.distance < 0.7 * m2.distance:
+                matchesMask[i] = [1, 0]
+                ## Notice: How to get the index
+                pt1 = kpts1[m1.queryIdx].pt
+                pt2 = kpts2[m1.trainIdx].pt
+                print(i, pt1, pt2)
+                if i % 5 == 0:
+                    ## Draw pairs in purple, to make sure the result is ok
+                    #cv2.circle(img1, (int(pt1[0]), int(pt1[1])), 5, (255, 0, 255), -1)
+                    cv2.circle(frame, (int(pt2[0]), int(pt2[1])), 5, (255, 0, 255), -1)
 
         # show the frame and record if a key is pressed
         cv2.imshow("Frame", frame)

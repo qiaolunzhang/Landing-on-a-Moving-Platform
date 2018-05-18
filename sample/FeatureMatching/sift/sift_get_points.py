@@ -1,24 +1,10 @@
-#!/usr/bin/python3
-# 2017.10.06 22:36:44 CST
-# 2017.10.06 23:18:25 CST
-
-"""
-Environment:
-    OpenCV 3.3  + Python 3.5
-
-Aims:
-(1) Detect sift keypoints and compute descriptors.
-(2) Use flannmatcher to match descriptors.
-(3) Do ratio test and output the matched pairs coordinates, draw some pairs in purple .
-(4) Draw matched pairs in blue color, singlepoints in red.
-"""
 import numpy as np
 import cv2
 from matplotlib import pyplot as plt
-imgname = "box.jpg"          # query image (large scene)
-imgname2 = "box_in_scene.jpg"   # train image (small object)
-#imgname = "small.png"
-#imgname2 = "big.png"
+#imgname = "box.jpg"          # query image (large scene)
+#imgname2 = "box_in_scene.jpg"   # train image (small object)
+imgname = "small.png"
+imgname2 = "big.png"
 
 ## Create SIFT object
 sift = cv2.xfeatures2d.SIFT_create()
