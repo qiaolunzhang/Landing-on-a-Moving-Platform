@@ -15,8 +15,8 @@ Aims:
 import numpy as np
 import cv2
 from matplotlib import pyplot as plt
-imgname = "box.jpg"          # query image (large scene)
-imgname2 = "box_in_scene.jpg"   # train image (small object)
+imgname = "big.png"          # query image (large scene)
+imgname2 = "small.png"   # train image (small object)
 
 ## Create SIFT object
 sift = cv2.xfeatures2d.SIFT_create()

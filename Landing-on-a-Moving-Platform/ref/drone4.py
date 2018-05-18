@@ -5,7 +5,7 @@
 import cv2
 
 # load the video
-camera = cv2.VideoCapture('test.mp4')
+camera = cv2.VideoCapture('../../video/test.mp4')
 
 # keep looping
 while True:
