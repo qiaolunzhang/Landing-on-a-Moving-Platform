@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-planets = cv2.imread('./data/mark.jpg')
+planets = cv2.imread('./data/box.jpg')
 gray_img = cv2.cvtColor(planets, cv2.COLOR_BGR2GRAY)
 img = cv2.medianBlur(gray_img, 5)
 cimg = cv2.cvtColor(img, cv2.COLOR_BAYER_BG2BGR)
