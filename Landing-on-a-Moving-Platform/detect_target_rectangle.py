@@ -3,6 +3,7 @@
 
 # import the necessary packages
 import cv2
+import numpy as np
 
 standard_path = "./data/mark.jpg"
 video_path = "../video/test.mp4"
@@ -48,40 +49,21 @@ while True:
                 ## Notice: How to get the index
                 pt1 = kpts1[m1.queryIdx].pt
                 pt2 = kpts2[m1.trainIdx].pt
-                print(i, pt1, pt2)
+                # print(i, pt1, pt2)
                 if i % 5 == 0:
                     ## Draw pairs in purple, to make sure the result is ok
                     cv2.circle(img1, (int(pt1[0]), int(pt1[1])), 5, (255, 0, 255), -1)
                     cv2.circle(frame, (int(pt2[0]), int(pt2[1])), 5, (255, 0, 255), -1)
-                    pt2_list.append(pt2)
-        x_min = pt2_list[0][0]
-        x_max = pt2_list[0][0]
-        y_min = pt2_list[0][1]
-        y_max = pt2_list[0][1]
-        for point in pt2_list:
-            if point[0] < x_min:
-                x_min = point[0]
-            elif point[0] > x_max:
-                x_max = point[0]
+                    pt2_list.append([int(pt2[0]), int(pt2[1])])
 
-            if point[1] < y_min:
-                y_min = point[1]
-            elif point[1] > y_max:
-                y_max = point[1]
-        print("Now point is", x_min, y_min)
-
-        """
-        shape_pic = frame.shape
-        if x_max >= shape_pic[0]:
-            x_max = shape_pic[0]
-        if y_max >
-        """
-
+        cnt = np.array(pt2_list)
+        print("cnt", cnt)
+        rect = cv2.minAreaRect(cnt)
+        box = cv2.boxPoints(rect)
+        box = np.int0(box)
+        print(cnt)
+        cv2.drawContours(frame, [box], 0, (0, 0, 255), 2)
         #cv2.rectangle(frame, (x_min, y_min), (y_min, y_max), (0, 255, 0), 5)
-        cv2.rectangle(frame, (0, 0), (20, 20), (0, 255, 0), 5)
-        #@todo find the top left point
-
-        #@todo find the bottom right point
 
         # show the frame and record if a key is pressed
         cv2.imshow("Frame", frame)
@@ -90,7 +72,8 @@ while True:
         # if the 'q' key is pressed, stop the loop
         if key == ord("q"):
             break
-    except:
+    except Exception as e:
+        print("Reason", e)
         continue
 
 # cleanup the camera and close any open windows
