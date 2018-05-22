@@ -3,7 +3,7 @@
 ## Structure of the Project
 
 - Landing-on-a-Moving-Platform: The key code of the repo
-- sample: Some reference code while learning opencv, etc
+- opencv-sample: Some reference code while learning opencv, etc
 
 ## Tag used to detect landing platform
 ![mark](./Landing-on-a-Moving-Platform/data/mark_original.jpg)
