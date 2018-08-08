@@ -8,7 +8,7 @@ Servo myservo;
 int pos = 90;
 
 // keeps track of how many scans have been collected
-uint8_t scanCount = 0; 
+uint8_t scanCount = 0;
 // keeps track of how many samples have been collected
 uint16_t sampleCount = 0;
 bool bleft=0;
@@ -22,6 +22,7 @@ uint16_t distances[500];      // in cm
 uint8_t signalStrengths[500]; // 0:255, higher is better
 
 // Finite States for the program sequence
+const uint8_t STATE_WAIT_FOR_USER_INPUT = 0;
 const uint8_t STATE_ADJUST_DEVICE_SETTINGS = 1;
 const uint8_t STATE_VERIFY_CURRENT_DEVICE_SETTINGS = 2;
 const uint8_t STATE_BEGIN_DATA_ACQUISITION = 3;
@@ -35,6 +36,7 @@ const uint8_t STATE_ERROR = 8;
 uint8_t currentState;
 
 // String to collect user input over serial
+String userInput = "";
 
 void setup()
 {
@@ -44,6 +46,9 @@ void setup()
   pinMode(22, OUTPUT);
   myservo.attach(9);
   myservo.write(90);
+  
+  // reserve space to accumulate user message
+  userInput.reserve(50);
 
   // initialize counter variables and reset the current state
   reset();
@@ -54,6 +59,10 @@ void loop()
 {
   switch (currentState)
   {
+  case STATE_WAIT_FOR_USER_INPUT:
+    if (listenForUserInput())
+      currentState = STATE_ADJUST_DEVICE_SETTINGS;
+    break;
   case STATE_ADJUST_DEVICE_SETTINGS:
     currentState = adjustDeviceSettings() ? STATE_VERIFY_CURRENT_DEVICE_SETTINGS : STATE_ERROR;
     break;
@@ -65,22 +74,45 @@ void loop()
     break;
   case STATE_GATHER_DATA:
     gatherSensorReading();
-    if (scanCount > 1)
-        currentState = STATE_REPORT_COLLECTED_DATA;
+    if (scanCount > 2)
+      currentState = STATE_REPORT_COLLECTED_DATA;
+    break;
+  case STATE_STOP_DATA_ACQUISITION:
+    currentState = stopDataCollectionPhase() ? STATE_REPORT_COLLECTED_DATA : STATE_ERROR;
     break;
   case STATE_REPORT_COLLECTED_DATA:
     printCollectedData();
-    scanCount = 0;
-    sampleCount = 0;
+	scanCount = 0;
+	sampleCount = 0;
     currentState = STATE_GATHER_DATA;
-    //reset();
+    break;
+  case STATE_RESET:
+    Serial.println("\n\nAttempting to reset and run the program again...");
+    reset();
+    currentState = STATE_WAIT_FOR_USER_INPUT;
     break;
   default: // there was some error
     Serial.println("\n\nAn error occured. Attempting to reset and run program again...");
     reset();
-    currentState = STATE_ADJUST_DEVICE_SETTINGS;
+    currentState = STATE_WAIT_FOR_USER_INPUT;
     break;
   }
+}
+
+// checks if the user has communicated anything over serial
+// looks for the user to send "start"
+bool listenForUserInput()
+{
+  while (Serial.available())
+  {
+    userInput += (char)Serial.read();
+  }
+  if (userInput.indexOf("start") != -1)
+  {
+    Serial.println("Registered user start.");
+    return true;
+  }
+  return false;
 }
 
 // Adjusts the device settings
@@ -133,7 +165,7 @@ bool beginDataCollectionPhase()
   bool bSuccess = device.startScanning();
   Serial.println(bSuccess ? "\nSuccessfully initiated scanning..." : "\nFailed to start scanning.");
   if (bSuccess)
-    Serial.println("\nNow start to scan...");
+    Serial.println("\nGathering 3 scans...");
   return bSuccess;
 }
 
@@ -149,10 +181,9 @@ void gatherSensorReading()
     // check if this reading was the very first reading of a new 360 degree scan
     if (reading.isSync())
       scanCount++;
-      //sampleCount = 0;
 
-    // don't collect more than 1 scans
-    if (scanCount > 1)
+    // don't collect more than 3 scans
+    if (scanCount > 3)
       return;
 
     // store the info for this sample
@@ -163,30 +194,29 @@ void gatherSensorReading()
 
     // increment sample count
     sampleCount++;
-  }    
+  }
 }
 
+// Terminates the data collection phase (stops scanning)
+bool stopDataCollectionPhase()
+{
+  // Attempt to stop scanning
+  bool bSuccess = device.stopScanning();
+
+  Serial.println(bSuccess ? "\nSuccessfully stopped scanning." : "\nFailed to stop scanning.");
+  return bSuccess;
+}
 
 // Prints the collected data to the console
 // (only prints the complete scans, ignores the first partial)
 void printCollectedData()
 {
-  Serial.println("\n----------------------NEW SCAN----------------------");
   int left_angle = 0;
   int right_angle = 360;
   bleft = 0;
   bright = 0;
-  Serial.println("\nPrinting info for the collected scans (NOT REAL-TIME):");
-
-  int indexOfFirstSyncReading = 0;
-  /* don't print the trailing readings from the first partial scan
-  while (!syncValues[indexOfFirstSyncReading])
-  {
-    indexOfFirstSyncReading++;
-  }
-  */
   
-  Serial.println("There are " + String(sampleCount) + " samples.");
+  Serial.println("\nPrinting info for the collected scans (NOT REAL-TIME):");
   // print the readings for all the complete scans
   for (int i = 0; i < sampleCount; i++)
   {
@@ -245,5 +275,7 @@ void reset()
   device.reset();
   delay(50);
   Serial.flush();
-  currentState = 1;
+  userInput = "";
+  Serial.println("\n\nWhenever you are ready, type \"start\" to to begin the sequence...");
+  currentState = 0;
 }

@@ -65,8 +65,7 @@ void loop()
     break;
   case STATE_GATHER_DATA:
     gatherSensorReading();
-    if (scanCount > 1)
-        currentState = STATE_REPORT_COLLECTED_DATA;
+    currentState = STATE_REPORT_COLLECTED_DATA;
     break;
   case STATE_REPORT_COLLECTED_DATA:
     printCollectedData();
@@ -144,23 +143,29 @@ void gatherSensorReading()
   // Note: getReading() will write values into the "reading" variable
   bool success = false;
   ScanPacket reading = device.getReading(success);
+  sampleCount = 0;
+  while (reading.isSync() == false) {
+    reading = device.getReading(success);
+  }
+  // store the info for this sample
+  syncValues[sampleCount] = reading.isSync();
+  angles[sampleCount] = reading.getAngleDegrees();
+  distances[sampleCount] = reading.getDistanceCentimeters();
+  signalStrengths[sampleCount] = reading.getSignalStrength();
+  // increment sample count
+  sampleCount++;  
+  
+  reading = device.getReading(success);
   if (success)
   {
     // check if this reading was the very first reading of a new 360 degree scan
     if (reading.isSync())
-      scanCount++;
-      //sampleCount = 0;
-
-    // don't collect more than 1 scans
-    if (scanCount > 1)
-      return;
-
+      return
     // store the info for this sample
     syncValues[sampleCount] = reading.isSync();
     angles[sampleCount] = reading.getAngleDegrees();
     distances[sampleCount] = reading.getDistanceCentimeters();
     signalStrengths[sampleCount] = reading.getSignalStrength();
-
     // increment sample count
     sampleCount++;
   }    
